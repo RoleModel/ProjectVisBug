@@ -130,9 +130,13 @@ export const buildPrompt = () => {
     return { text: '', count: 0 }
 
   const doc = getDoc()
-  const url = getWin().location?.href || '(unknown page)'
+  const win = getWin()
+  const url = win.location?.href || '(unknown page)'
+  const viewport = win.innerWidth && win.innerHeight
+    ? `${win.innerWidth}×${win.innerHeight}`
+    : '(unknown)'
 
-  const body = changes.map(changeBlock).join('\n\n---\n\n')
+  const body = changes.map(changeBlock).join('\n\n')
 
   const css = rawCSS(changes)
 
@@ -143,6 +147,7 @@ export const buildPrompt = () => {
     '',
     `**Page:** ${url}`,
     `**Title:** ${doc.title || '(untitled)'}`,
+    `**Viewport:** ${viewport}`,
     `**Elements changed:** ${changes.length}`,
     '',
     '---',
