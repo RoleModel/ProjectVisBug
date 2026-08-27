@@ -192,6 +192,78 @@
   }
 }
 
+/*
+  13 tools + 3 colors + the export button overflow shorter viewports — a
+  1366x768 screen leaves roughly 660px, which cut the bottom of the toolbar
+  off entirely. Tighten up rather than let items become unreachable.
+*/
+@media (max-height: 820px) {
+  :host li {
+    height: 2em;
+    width: 2em;
+    margin: 0.02em 0.25em;
+  }
+
+  :host > ol {
+    margin: 0.5em 0 0.25em 0.75em;
+  }
+
+  :host :is([colors], [actions]) {
+    margin-top: 0.25em;
+  }
+
+  :host [colors] > li {
+    margin-bottom: 0.25em;
+  }
+}
+
+@media (max-height: 640px) {
+  :host li {
+    height: 1.65em;
+    width: 1.65em;
+  }
+}
+
+:host [actions] {
+  margin-top: .5em;
+}
+
+:host [actions] > li {
+  cursor: pointer;
+  border-radius: 50%;
+  background-color: var(--theme-bd-2);
+  box-shadow: 0 0.25em 0.5em hsla(0,0%,0%,10%);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  &:hover {
+    background-color: var(--theme-icon_hover-bg);
+  }
+
+  &:active {
+    background-color: var(--theme-icon_active-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--neon-pink);
+    outline-offset: 2px;
+  }
+
+  /* collecting cross-origin stylesheets is a network round trip */
+  &[data-busy] {
+    pointer-events: none;
+
+    & > svg {
+      opacity: 0.4;
+      animation: export-pulse 1s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes export-pulse {
+  50% { opacity: 1; }
+}
+
 :host [colors] {
   margin-top: .5em;
 }

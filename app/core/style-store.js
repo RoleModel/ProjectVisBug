@@ -150,6 +150,10 @@ export const serialize = ({ pretty = true } = {}) => {
     .join('\n\n')
 }
 
+/** Identity check — export skips our sheet so it isn't emitted twice. */
+export const isEditorSheet = candidate =>
+  !!state.sheet && candidate === state.sheet
+
 /** Test/teardown hook. */
 export const reset = () => {
   if (state.sheet) {

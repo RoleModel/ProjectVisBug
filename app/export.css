@@ -1,0 +1,10 @@
+@import url("export-imported.css");
+
+.card {
+  background: #222;
+  color: #eee;
+  padding: 16px;
+  border-radius: 8px;
+  background-image: url(assets/texture.png);
+}
+.row { display: flex; gap: 10px; margin-top: 16px; }

@@ -18,6 +18,7 @@ import {
   VisBugDarkStyles
 } from '../styles.store'
 
+import { exportBundle, downloadBundle } from '../../core'
 import { VisBugModel }            from './model'
 import * as Icons                 from './vis-bug.icons'
 import { provideSelectorEngine }  from '../../features/search'
@@ -121,6 +122,22 @@ export default class VisBug extends HTMLElement {
       })
     )
 
+    const export_button = this.$shadow.querySelector('#export')
+
+    const runExport = async e => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      export_button.setAttribute('data-busy', true)
+      try { await downloadBundle(await exportBundle()) }
+      catch (err) { console.error('VisBug export failed', err) }
+      finally { export_button.removeAttribute('data-busy') }
+    }
+
+    export_button.addEventListener('click', runExport)
+    export_button.addEventListener('keydown', e =>
+      (e.key === 'Enter' || e.key === ' ') && runExport(e))
+
     hotkeys(`${metaKey}+/,${metaKey}+.`, e =>
       this.$shadow.host.style.display =
         this.$shadow.host.style.display === 'none'
@@ -182,6 +199,23 @@ export default class VisBug extends HTMLElement {
         <li class="color" id="border" aria-label="Border or Stroke" aria-description="Change the border color or stroke of svg">
           <input type="color">
           ${Icons.color_border}
+        </li>
+      </ol>
+      <ol actions>
+        <li
+          id="export"
+          aria-label="Export"
+          aria-description="Download the page as one HTML file and one CSS file"
+          role="button"
+          tabindex="0"
+        >
+          ${Icons.download}
+          <aside export>
+            <figcaption>
+              <h2>Export</h2>
+              <p>Download the page as one HTML file and one CSS file</p>
+            </figcaption>
+          </aside>
         </li>
       </ol>
     `
