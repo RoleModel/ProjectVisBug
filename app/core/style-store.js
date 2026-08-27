@@ -150,6 +150,17 @@ export const serialize = ({ pretty = true } = {}) => {
     .join('\n\n')
 }
 
+/** Every property we've authored for an element, as {kebab-prop: value}. */
+export const getAuthoredStyles = el => {
+  const id = el?.getAttribute?.(ID_ATTR)
+  if (!id || !state.rules.has(id)) return {}
+
+  const rule = state.rules.get(id)
+
+  return [...rule.style].reduce((styles, name) =>
+    (styles[name] = rule.style.getPropertyValue(name), styles), {})
+}
+
 /** Identity check — export skips our sheet so it isn't emitted twice. */
 export const isEditorSheet = candidate =>
   !!state.sheet && candidate === state.sheet

@@ -1,4 +1,5 @@
 import { setStyle } from './style-store'
+import { notePosition } from './changes'
 
 /**
  * Undo/redo journal.
@@ -128,6 +129,7 @@ export const transact = (label, fn) => {
  */
 export const recordDOM = (node, apply, label = 'move') => {
   const from = anchor(node)
+  if (!state.applying) notePosition(node, from)
   apply()
   const to = anchor(node)
 

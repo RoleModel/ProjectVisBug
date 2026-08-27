@@ -19,6 +19,7 @@ import { commands as loop_thru_widths_commands, description as loop_thru_widths_
 // import { commands as placeholdifier_commands, description as placeholdifier_description, default as PlaceholdifierPlugin } from './placeholdifier'
 import { commands as expand_text_commands, description as expand_text_description, default as ExpandTextPlugin } from './expand-text'
 import { commands as export_commands, description as export_description, default as ExportPlugin } from './export'
+import { commands as copy_changes_commands, description as copy_changes_description, default as CopyChangesPlugin } from './copy-changes'
 
 const commandsToHash = (plugin_commands, plugin_fn) =>
   plugin_commands.reduce((commands, command) =>
@@ -47,6 +48,7 @@ export const PluginRegistry = new Map(Object.entries({
   // ...commandsToHash(placeholdifier_commands, PlaceholdifierPlugin),
   ...commandsToHash(expand_text_commands, ExpandTextPlugin),
   ...commandsToHash(export_commands, ExportPlugin),
+  ...commandsToHash(copy_changes_commands, CopyChangesPlugin),
 }))
 
 export const PluginHints = [
@@ -70,6 +72,7 @@ export const PluginHints = [
   // {command: placeholdifier_commands[0], description: placeholdifier_description},
   {command: expand_text_commands[0], description: expand_text_description},
   {command: export_commands[0], description: export_description},
+  {command: copy_changes_commands[0], description: copy_changes_description},
   // ...colorblind_commands.map(cbc => {
   //   return {
   //     command: cbc, description: `simulate ${cbc}`

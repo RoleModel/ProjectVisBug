@@ -18,7 +18,7 @@ import {
   VisBugDarkStyles
 } from '../styles.store'
 
-import { exportBundle, downloadBundle } from '../../core'
+import { copyPrompt } from '../../core'
 import { VisBugModel }            from './model'
 import * as Icons                 from './vis-bug.icons'
 import { provideSelectorEngine }  from '../../features/search'
@@ -122,21 +122,34 @@ export default class VisBug extends HTMLElement {
       })
     )
 
-    const export_button = this.$shadow.querySelector('#export')
+    const copy_button = this.$shadow.querySelector('#copy-changes')
 
-    const runExport = async e => {
+    const flash = state => {
+      copy_button.setAttribute('data-state', state)
+      clearTimeout(this._copy_timer)
+      this._copy_timer = setTimeout(() =>
+        copy_button.removeAttribute('data-state'), 2000)
+    }
+
+    const runCopy = async e => {
       e.preventDefault()
       e.stopPropagation()
 
-      export_button.setAttribute('data-busy', true)
-      try { await downloadBundle(await exportBundle()) }
-      catch (err) { console.error('VisBug export failed', err) }
-      finally { export_button.removeAttribute('data-busy') }
+      try {
+        const { copied, count } = await copyPrompt()
+        flash(copied ? 'copied' : 'empty')
+        if (copied) console.info(`VisBug: copied changes for ${count} element${count === 1 ? '' : 's'}`)
+        else console.info('VisBug: nothing has been edited yet')
+      }
+      catch (err) {
+        console.error('VisBug: could not copy changes', err)
+        flash('failed')
+      }
     }
 
-    export_button.addEventListener('click', runExport)
-    export_button.addEventListener('keydown', e =>
-      (e.key === 'Enter' || e.key === ' ') && runExport(e))
+    copy_button.addEventListener('click', runCopy)
+    copy_button.addEventListener('keydown', e =>
+      (e.key === 'Enter' || e.key === ' ') && runCopy(e))
 
     hotkeys(`${metaKey}+/,${metaKey}+.`, e =>
       this.$shadow.host.style.display =
@@ -203,17 +216,17 @@ export default class VisBug extends HTMLElement {
       </ol>
       <ol actions>
         <li
-          id="export"
-          aria-label="Export"
-          aria-description="Download the page as one HTML file and one CSS file"
+          id="copy-changes"
+          aria-label="Copy changes"
+          aria-description="Copy your edits as a prompt for a coding agent"
           role="button"
           tabindex="0"
         >
-          ${Icons.download}
-          <aside export>
+          ${Icons.copy}
+          <aside copy-changes>
             <figcaption>
-              <h2>Export</h2>
-              <p>Download the page as one HTML file and one CSS file</p>
+              <h2>Copy changes</h2>
+              <p>Copy your edits as a prompt that tells a coding agent which elements changed and how</p>
             </figcaption>
           </aside>
         </li>
