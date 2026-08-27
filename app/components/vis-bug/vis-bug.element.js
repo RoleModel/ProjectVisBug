@@ -213,10 +213,6 @@ export default class VisBug extends HTMLElement {
           <input type="color" list="token_swatches">
           ${Icons.color_border}
         </li>
-        <!-- filled from the page's own color tokens, see features/color.js -->
-        <datalist id="token_swatches"></datalist>
-      </ol>
-      <ol actions>
         <li
           id="copy-changes"
           aria-label="Copy changes"
@@ -232,6 +228,8 @@ export default class VisBug extends HTMLElement {
             </figcaption>
           </aside>
         </li>
+        <!-- filled from the page's own color tokens, see features/color.js -->
+        <datalist id="token_swatches"></datalist>
       </ol>
     `
   }

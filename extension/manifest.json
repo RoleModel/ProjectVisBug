@@ -15,9 +15,9 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Click or press Alt+Shift+D to launch VisBug",
+    "default_title": "Click or press Alt+Shift+D to launch DevBug",
     "default_icon": {
-      "128": "icons/visbug.png"
+      "128": "icons/visbug-dev.png"
     }
   },
   "web_accessible_resources": [{

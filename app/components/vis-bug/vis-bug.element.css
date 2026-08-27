@@ -208,7 +208,7 @@
     margin: 0.5em 0 0.25em 0.75em;
   }
 
-  :host :is([colors], [actions]) {
+  :host [colors] {
     margin-top: 0.25em;
   }
 
@@ -224,15 +224,9 @@
   }
 }
 
-:host [actions] {
-  margin-top: .5em;
-}
-
-:host [actions] > li {
+:host [colors] > #copy-changes {
   cursor: pointer;
-  border-radius: 50%;
   background-color: var(--theme-bd-2);
-  box-shadow: 0 0.25em 0.5em hsla(0,0%,0%,10%);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
 
