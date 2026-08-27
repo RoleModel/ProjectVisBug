@@ -1,0 +1,60 @@
+@import "../_variables.css";
+
+:host {
+  position: var(--position, absolute);
+  /* `auto` on right/bottom is what keeps the popover UA styles
+     (inset: 0; margin: auto) from centering us in the viewport */
+  inset: var(--top) auto auto var(--left);
+  width: var(--width);
+  height: var(--height);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+  z-index: var(--layer-5);
+  display: block;
+  isolation: isolate;
+}
+
+:host::backdrop {
+  background: none !important;
+}
+
+:host([kind="bar"]) .indicator {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-round, 1e5px);
+  background: var(--neon-pink, hsl(328 100% 54%));
+  box-shadow: 0 0 0 1px hsl(0 0% 100% / 40%), 0 0 8px 0 var(--neon-pink, hsl(328 100% 54%));
+}
+
+/* pips on the ends read as an insertion caret rather than a border */
+:host([kind="bar"]) .cap {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--neon-pink, hsl(328 100% 54%));
+}
+
+:host([kind="bar"][axis="y"]) .cap.start { top: -2px;    left: 50%; translate: -50% 0; }
+:host([kind="bar"][axis="y"]) .cap.end   { bottom: -2px; left: 50%; translate: -50% 0; }
+:host([kind="bar"][axis="x"]) .cap.start { left: -2px;   top: 50%;  translate: 0 -50%; }
+:host([kind="bar"][axis="x"]) .cap.end   { right: -2px;  top: 50%;  translate: 0 -50%; }
+
+:host([kind="cell"]) .indicator,
+:host([kind="container"]) .indicator {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  outline: 2px dashed var(--neon-purple, hsl(267 100% 58%));
+  outline-offset: -2px;
+  background: hsl(267 100% 58% / 12%);
+}
+
+:host([kind="container"]) .indicator {
+  outline-style: solid;
+  background: hsl(267 100% 58% / 6%);
+}

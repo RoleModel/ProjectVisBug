@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Drop resolver fixture</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 0; padding: 24px; background: #111; color: #eee; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #888; margin: 28px 0 8px; }
+  .box { background: #2a2f45; border: 1px solid #3d4463; border-radius: 6px; padding: 12px 16px; }
+  .rail { border: 1px dashed #444; border-radius: 8px; padding: 12px; min-height: 40px; }
+
+  #flex-row    { display: flex; gap: 12px; }
+  #flex-col    { display: flex; flex-direction: column; gap: 12px; width: 240px; }
+  #flex-rev    { display: flex; flex-direction: row-reverse; gap: 12px; }
+  #flex-wrap   { display: flex; flex-wrap: wrap; gap: 12px; max-width: 420px; }
+  #grid-auto   { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 60px 60px; gap: 10px; }
+  #grid-placed { display: grid; grid-template-columns: 120px 120px 120px; grid-template-rows: 60px 60px; gap: 10px; }
+  #grid-placed .box:nth-child(1) { grid-column: 1; grid-row: 1; }
+  #grid-placed .box:nth-child(2) { grid-column: 3; grid-row: 1; }
+  #grid-placed .box:nth-child(3) { grid-column: 2; grid-row: 2; }
+  #inline-flow .box { display: inline-block; margin: 4px; }
+  #block-stack .box { margin-bottom: 10px; }
+  #free { position: relative; height: 220px; }
+  #free .box { position: absolute; width: 90px; height: 48px; }
+  #empty { min-height: 80px; }
+  table { border-collapse: collapse; }
+  td { border: 1px solid #3d4463; padding: 8px 14px; }
+</style>
+
+<h2>flex row</h2>
+<div class="rail" id="flex-row"><div class="box">one</div><div class="box">two</div><div class="box">three</div></div>
+
+<h2>flex column</h2>
+<div class="rail" id="flex-col"><div class="box">one</div><div class="box">two</div><div class="box">three</div></div>
+
+<h2>flex row-reverse</h2>
+<div class="rail" id="flex-rev"><div class="box">one</div><div class="box">two</div><div class="box">three</div></div>
+
+<h2>flex wrap</h2>
+<div class="rail" id="flex-wrap"><div class="box">alpha</div><div class="box">bravo</div><div class="box">charlie</div><div class="box">delta</div><div class="box">echo</div><div class="box">foxtrot</div></div>
+
+<h2>grid (auto-placed)</h2>
+<div class="rail" id="grid-auto"><div class="box">one</div><div class="box">two</div><div class="box">three</div><div class="box">four</div></div>
+
+<h2>grid (explicitly placed)</h2>
+<div class="rail" id="grid-placed"><div class="box">one</div><div class="box">two</div><div class="box">three</div></div>
+
+<h2>block stack</h2>
+<div class="rail" id="block-stack"><div class="box">one</div><div class="box">two</div><div class="box">three</div></div>
+
+<h2>inline-block run</h2>
+<div class="rail" id="inline-flow"><div class="box">one</div><div class="box">two</div><div class="box">three</div><div class="box">four</div></div>
+
+<h2>empty container</h2>
+<div class="rail" id="empty"></div>
+
+<h2>absolute / free placement</h2>
+<div class="rail" id="free"><div class="box" style="left:10px;  top:10px;">a</div><div class="box" style="left:150px; top:10px;">b</div><div class="box" style="left:10px;  top:100px;">c</div></div>
+
+<h2>table</h2>
+<table id="table"><tbody><tr><td>r1c1</td><td>r1c2</td><td>r1c3</td></tr><tr><td>r2c1</td><td>r2c2</td><td>r2c3</td></tr></tbody></table>
+
+<vis-bug></vis-bug>
+<script src="bundle.js" type="module" defer></script>

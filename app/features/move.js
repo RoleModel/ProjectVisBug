@@ -1,23 +1,27 @@
 import $ from 'blingblingjs'
 import hotkeys from 'hotkeys-js'
-import { getNodeIndex, showEdge, swapElements, notList } from '../utilities/'
+import { getNodeIndex, showEdge, isFixed } from '../utilities/'
+import { editStyle, history } from '../core'
+import { resolveDrop } from './dropzones'
 import { toggleWatching } from './imageswap'
 
 const key_events = 'up,down,left,right'
+
+// pixels of travel before a mousedown becomes a drag rather than a click
+const DRAG_THRESHOLD = 4
+
 const state = {
   drag: {
     src:        null,
-    parent:     null,
-    parent_ui:  [],
-    siblings:   new Map(),
-    swapping:   new Map(),
-  },
-  hover: {
-    dropzones: [],
-    observers: [],
+    active:     false,
+    pointer_id: null,
+    origin:     null,
+    offset:     null,
+    rect:       null,
+    drop:       null,
+    indicator:  null,
   },
 }
-// todo: indicator for when node can descend
 // todo: have it work with shadowDOM
 export function Moveable(visbug) {
   hotkeys(key_events, (e, {key}) => {
@@ -46,33 +50,36 @@ export function Moveable(visbug) {
 export function moveElement(el, direction) {
   if (!el) return
 
+  const step = apply =>
+    history.recordDOM(el, apply, 'nudge')
+
   switch(direction) {
     case 'left':
       if (canMoveLeft(el))
-        el.parentNode.insertBefore(el, el.previousElementSibling)
+        step(() => el.parentNode.insertBefore(el, el.previousElementSibling))
       else
         showEdge(el.parentNode)
       break
 
     case 'right':
       if (canMoveRight(el) && el.nextElementSibling.nextSibling)
-        el.parentNode.insertBefore(el, el.nextElementSibling.nextSibling)
+        step(() => el.parentNode.insertBefore(el, el.nextElementSibling.nextSibling))
       else if (canMoveRight(el))
-        el.parentNode.appendChild(el)
+        step(() => el.parentNode.appendChild(el))
       else
         showEdge(el.parentNode)
       break
 
     case 'up':
       if (canMoveUp(el))
-        popOut({el})
+        step(() => popOut({el}))
       break
 
     case 'down':
       if (canMoveUnder(el))
-        popOut({el, under: true})
+        step(() => popOut({el, under: true}))
       else if (canMoveDown(el))
-        el.nextElementSibling.prepend(el)
+        step(() => el.nextElementSibling.prepend(el))
       break
   }
 }
@@ -91,221 +98,193 @@ export const popOut = ({el, under = false}) =>
         : getNodeIndex(el)])
 
 export function dragNDrop(selection) {
-  if (!selection.length)
-    return
-
   clearListeners()
 
-  const [src]         = selection
-  const {parentNode}  = src
+  if (selection.length !== 1) return
 
-  const validMoveableChildren = [...parentNode.querySelectorAll(':scope > *' + notList)]
+  const [src] = selection
+  if (src instanceof SVGElement) return
 
-  const tooManySelected       = selection.length !== 1
-  const hasNoSiblingsToDrag   = validMoveableChildren.length <= 1
-  const isAnSVG               = src instanceof SVGElement
-
-  if (tooManySelected || hasNoSiblingsToDrag || isAnSVG) 
-    return 
-
-  validMoveableChildren.forEach(sibling =>
-    state.drag.siblings.set(sibling, createGripUI(sibling)))
-
-  state.drag.parent     = parentNode
-  state.drag.parent_ui  = createParentUI(parentNode)
-
-  moveWatch(state.drag.parent)
+  state.drag.src = src
+  src.style.cursor = 'grab'
+  $(src).on('pointerdown', onPointerDown)
 }
 
-const moveWatch = node => {
-  const $node = $(node)
+const onPointerDown = e => {
+  const src = state.drag.src
+  if (!src || e.button !== 0) return
 
-  $node.on('mouseleave', dragDrop)
-  $node.on('dragstart', dragStart)
-  $node.on('drop', dragDrop)
+  // let text selection and form controls keep working
+  if (e.target.isContentEditable || e.target.closest('input,textarea,select')) return
 
-  state.drag.siblings.forEach((grip, sibling) => {
-    sibling.setAttribute('draggable', true)
-    $(sibling).on('dragover', dragOver)
-    $(sibling).on('mouseenter', siblingHoverIn)
-    $(sibling).on('mouseleave', siblingHoverOut)
+  e.preventDefault()
+  e.stopPropagation()
+
+  state.drag.pointer_id = e.pointerId
+  state.drag.origin     = { x: e.clientX, y: e.clientY }
+  state.drag.rect       = src.getBoundingClientRect()
+  state.drag.offset     = {
+    x: e.clientX - state.drag.rect.left,
+    y: e.clientY - state.drag.rect.top,
+  }
+  state.drag.active = false
+
+  src.setPointerCapture(e.pointerId)
+  $(src).on('pointermove', onPointerMove)
+  $(src).on('pointerup', onPointerUp)
+  $(src).on('pointercancel', onPointerUp)
+}
+
+const beginDrag = () => {
+  const src = state.drag.src
+
+  state.drag.active = true
+  src.style.cursor = 'grabbing'
+
+  history.beginGesture('move')
+
+  ghostNode(src)
+  state.drag.indicator = createInsertionUI()
+}
+
+const onPointerMove = e => {
+  const src = state.drag.src
+  if (!src || e.pointerId !== state.drag.pointer_id) return
+
+  const travelled = Math.hypot(
+    e.clientX - state.drag.origin.x,
+    e.clientY - state.drag.origin.y)
+
+  if (!state.drag.active) {
+    if (travelled < DRAG_THRESHOLD) return
+    beginDrag()
+  }
+
+  e.preventDefault()
+
+  const rect = {
+    left:   e.clientX - state.drag.offset.x,
+    top:    e.clientY - state.drag.offset.y,
+    width:  state.drag.rect.width,
+    height: state.drag.rect.height,
+  }
+
+  const drop = resolveDrop({
+    x: e.clientX,
+    y: e.clientY,
+    dragged: src,
+    doc: src.ownerDocument,
+    rect,
   })
-}
 
-const moveUnwatch = node => {
-  const $node = $(node)
+  state.drag.drop = drop
 
-  $node.off('mouseleave', dragDrop)
-  $node.off('dragstart', dragStart)
-  $node.off('drop', dragDrop)
-
-  state.drag.siblings.forEach((grip, sibling) => {
-    sibling.removeAttribute('draggable')
-    $(sibling).off('dragover', dragOver)
-    $(sibling).off('mouseenter', siblingHoverIn)
-    $(sibling).off('mouseleave', siblingHoverOut)
-  })
-}
-
-const dragStart = ({target}) => {
-  if (!state.drag.siblings.has(target))
+  if (!drop) {
+    state.drag.indicator.style.display = 'none'
     return
+  }
 
-  state.drag.src = target
-  state.hover.dropzones.push(createDropzoneUI(target))
-  state.drag.siblings.get(target).style.opacity = 0.01
+  state.drag.indicator.style.display = ''
+  state.drag.indicator.placement = {
+    ...drop.indicator,
+    isFixed: isFixed(drop.container),
+  }
 
-  target.setAttribute('visbug-drag-src', true)
-  ghostNode(target)
-
-  $('visbug-hover').forEach(el =>
-    !el.hasAttribute('visbug-drag-container') && el.remove())
+  // free placement follows the cursor live; flow drops preview via the caret
+  if (drop.mode === 'free')
+    moveFreely(src, rect, drop)
 }
 
-const dragOver = e => {
-  if (
-    !state.drag.src || 
-    state.drag.swapping.get(e.target) || 
-    e.target.hasAttribute('visbug-drag-src') || 
-    !state.drag.siblings.has(e.currentTarget) ||
-    e.currentTarget !== e.target
-  ) return
+const moveFreely = (src, rect, drop) => {
+  const x = rect.left + (drop.snap?.dx || 0)
+  const y = rect.top  + (drop.snap?.dy || 0)
 
-  state.drag.swapping.set(e.target, true)
-  swapElements(state.drag.src, e.target)
+  // fixed elements are already positioned against the viewport; absolute ones
+  // resolve against their offset parent, so subtract that origin
+  const origin = getComputedStyle(src).position === 'fixed'
+    ? { left: 0, top: 0 }
+    : (src.offsetParent || drop.container).getBoundingClientRect()
 
-  setTimeout(() => 
-    state.drag.swapping.delete(e.target)
-  , 250)
+  editStyle(src, 'left', `${Math.round(x - origin.left)}px`, 'move')
+  editStyle(src, 'top',  `${Math.round(y - origin.top)}px`, 'move')
 }
 
-const dragDrop = e => {
-  if (!state.drag.src) return
+const onPointerUp = e => {
+  const src = state.drag.src
+  if (!src) return
 
-  state.drag.src.removeAttribute('visbug-drag-src')
-  ghostBuster(state.drag.src)
+  $(src).off('pointermove', onPointerMove)
+  $(src).off('pointerup', onPointerUp)
+  $(src).off('pointercancel', onPointerUp)
 
-  if (state.drag.siblings.has(state.drag.src))
-    state.drag.siblings.get(state.drag.src).style.opacity = null
+  if (src.hasPointerCapture?.(state.drag.pointer_id))
+    src.releasePointerCapture(state.drag.pointer_id)
 
-  state.hover.dropzones.forEach(zone =>
-    zone.remove())
+  if (!state.drag.active) return
 
-  state.drag.src = null
+  const drop = state.drag.drop
+
+  if (drop && drop.mode !== 'free') {
+    // one insert, one undo entry, even though the pointer moved a hundred times
+    if (drop.reference !== src && drop.container !== src)
+      history.recordDOM(src, () =>
+        drop.container.insertBefore(src, drop.reference), 'move')
+
+    if (drop.styles)
+      Object.entries(drop.styles).forEach(([prop, value]) =>
+        editStyle(src, prop, value, 'move'))
+  }
+
+  history.endGesture()
+
+  ghostBuster(src)
+  src.style.cursor = 'grab'
+  state.drag.active = false
+  state.drag.drop = null
+
+  clearIndicator()
 }
 
-const siblingHoverIn = ({target}) => {
-  if (!state.drag.siblings.has(target))
-    return
-
-  state.drag.siblings.get(target)
-    .toggleHovering({hovering:true})
+const createInsertionUI = () => {
+  const indicator = document.createElement('visbug-insertion')
+  document.body.appendChild(indicator)
+  return indicator
 }
 
-const siblingHoverOut = ({target}) => {
-  if (!state.drag.siblings.has(target))
-    return
-
-  state.drag.siblings.get(target)
-    .toggleHovering({hovering:false})
-}
-
-const ghostNode = ({style}) => {
-  style.transition  = 'opacity .25s ease-out'
-  style.opacity     = 0.01
-}
-
-const ghostBuster = ({style}) => {
-  style.transition  = null
-  style.opacity     = null
-}
-
-const createDropzoneUI = el => {
-  const zone = document.createElement('visbug-corners')
-
-  zone.position = {el}
-  document.body.appendChild(zone)
-
-  const observer = new MutationObserver(list =>
-    zone.position = {el})
-
-  observer.observe(el.parentNode, { 
-    childList: true, 
-    subtree: true, 
-  })
-
-  state.hover.observers.push(observer)
-
-  return zone
-}
-
-const createGripUI = el => {
-  const grip = document.createElement('visbug-grip')
-
-  grip.position = {el}
-  document.body.appendChild(grip)
-
-  const observer = new MutationObserver(list =>
-    grip.position = {el})
-
-  observer.observe(el.parentNode, { 
-    childList: true, 
-    subtree: true, 
-  })
-
-  state.hover.observers.push(observer)
-
-  return grip
-}
-
-const createParentUI = parent => {
-  const hover = document.createElement('visbug-hover')
-  const label = document.createElement('visbug-label')
-
-  hover.position = {el:parent}
-  hover.setAttribute('visbug-drag-container', true)
-
-  label.text = 'Drag Bounds'
-  label.position = {boundingRect: parent.getBoundingClientRect()}
-  label.style.setProperty('--label-bg', 'var(--theme-purple)')
-
-  document.body.appendChild(hover)
-  document.body.appendChild(label)
-
-  const observer = new MutationObserver(list => {
-    hover.position = {el:parent}
-    label.position = {boundingRect: parent.getBoundingClientRect()}
-  })
-
-  observer.observe(parent, { 
-    childList: true, 
-    subtree: true, 
-  })
-
-  state.hover.observers.push(observer)
-
-  return [hover,label]
+const clearIndicator = () => {
+  state.drag.indicator?.remove()
+  state.drag.indicator = null
 }
 
 export function clearListeners() {
-  moveUnwatch(state.drag.parent)
+  const src = state.drag.src
 
-  state.hover.observers.forEach(observer => 
-    observer.disconnect())
+  if (src) {
+    $(src).off('pointerdown', onPointerDown)
+    $(src).off('pointermove', onPointerMove)
+    $(src).off('pointerup', onPointerUp)
+    $(src).off('pointercancel', onPointerUp)
+    src.style.cursor = null
+    ghostBuster(src)
+  }
 
-  state.hover.dropzones.forEach(zone => 
-    zone.remove())
+  if (state.drag.active) history.endGesture()
 
-  state.drag.siblings.forEach((grip, sibling) => 
-    grip.remove())
+  clearIndicator()
 
-  state.drag.parent_ui.forEach(ui => 
-    ui.remove())
+  state.drag.src    = null
+  state.drag.drop   = null
+  state.drag.active = false
+}
 
-  state.hover.observers = []
-  state.hover.dropzones = []
-  state.drag.parent_ui  = []
-  state.drag.siblings.clear()
+const ghostNode = ({style}) => {
+  style.transition = 'opacity .15s ease-out'
+  style.opacity    = 0.4
+}
+
+const ghostBuster = ({style}) => {
+  style.transition = null
+  style.opacity    = null
 }
 
 const updateFeedback = el => {
