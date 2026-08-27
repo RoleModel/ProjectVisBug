@@ -1,3 +1,5 @@
+import { tellActiveTab } from './send.js'
+
 const schemestoragekey = 'visbug-color-scheme';
 const defaultcolorscheme = 'auto';
 
@@ -16,11 +18,9 @@ var platform = typeof browser === 'undefined'
   : browser
 
 const sendColorScheme = () => {
-  platform.tabs.query({active: true, currentWindow: true}, ([tab]) => {
-    tab && platform.tabs.sendMessage(tab.id, {
-      action: 'COLOR_SCHEME',
-      params: {mode:colorschemestate.mode},
-    })
+  tellActiveTab({
+    action: 'COLOR_SCHEME',
+    params: {mode:colorschemestate.mode},
   })
 }
 

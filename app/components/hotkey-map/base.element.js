@@ -87,8 +87,16 @@ export class HotkeyMap extends HTMLElement {
     })
   }
 
+  /**
+   * What one press is worth. Overridden by tools that walk a token scale,
+   * where "by 1" would be a lie.
+   */
+  amountFor({hotkeys}) {
+    return hotkeys.shift ? 10 : 1
+  }
+
   createCommand({e:{code}, hotkeys}) {
-    let amount              = hotkeys.shift ? 10 : 1
+    let amount              = this.amountFor({hotkeys})
     let negative            = hotkeys.alt ? 'Subtract' : 'Add'
     let negative_modifier   = hotkeys.alt ? 'from' : 'to'
 
