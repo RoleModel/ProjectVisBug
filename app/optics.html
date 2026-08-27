@@ -1,0 +1,66 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Optics token fixture</title>
+<link rel="stylesheet" href="optics-tokens.css">
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    font-size: var(--op-font-medium);
+    line-height: var(--op-line-height-base);
+    margin: 0;
+    padding: var(--op-space-large);
+    /* clear the VisBug toolbar so fixture elements are clickable */
+    padding-left: 120px;
+    background: #14161c;
+    color: #e7e9ee;
+  }
+
+  h2 {
+    font-size: var(--op-font-x-small);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #8b90a0;
+    margin: var(--op-space-x-large) 0 var(--op-space-x-small);
+  }
+
+  .card {
+    background: #232735;
+    border: 1px solid #343a4d;
+    border-radius: var(--op-radius-medium);
+    box-shadow: var(--op-shadow-small);
+    padding: var(--op-space-small);
+  }
+
+  /* class selectors on purpose: VisBug authors at .vb-x.vb-x.vb-x (0,3,0),
+     so an id rule here would outrank every edit and mask what's happening */
+
+  /* deliberately off-scale, so the first nudge has to snap onto the scale */
+  .off-scale { padding: 7px; font-size: 15px; }
+
+  /* already on the scale, so the first nudge is a clean step */
+  .on-scale  { padding: var(--op-space-small); font-size: var(--op-font-small); }
+
+  /* no token anywhere — should still behave like plain old VisBug */
+  .untokened { padding: 5px; font-size: 13px; }
+
+  .row { display: flex; gap: var(--op-space-small); flex-wrap: wrap; }
+</style>
+
+<h2>on the scale</h2>
+<div class="row"><div class="card on-scale" id="on-scale">on-scale</div></div>
+
+<h2>off the scale</h2>
+<div class="row"><div class="card off-scale" id="off-scale">off-scale</div></div>
+
+<h2>untokened</h2>
+<div class="row"><div class="card untokened" id="untokened">untokened</div></div>
+
+<h2>swatches</h2>
+<div class="row">
+  <div class="card" style="background: var(--op-color-primary-base)">primary</div>
+  <div class="card" style="background: var(--op-color-alerts-danger-base)">danger</div>
+  <div class="card" style="background: var(--op-color-alerts-info-base)">info</div>
+</div>
+
+<vis-bug></vis-bug>
+<script src="bundle.js" type="module" defer></script>

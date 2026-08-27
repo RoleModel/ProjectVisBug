@@ -1,3 +1,5 @@
+import { tellActiveTab } from './send.js'
+
 const storagekey = 'visbug-color-mode'
 const defaultcolormode = 'hex'
 
@@ -23,11 +25,9 @@ var platform = typeof browser === 'undefined'
   : browser
 
 const sendColorMode = () => {
-  platform.tabs.query({active: true, currentWindow: true}, ([tab]) => {
-    tab && platform.tabs.sendMessage(tab.id, {
-      action: 'COLOR_MODE',
-      params: {mode:colormodestate.mode},
-    })
+  tellActiveTab({
+    action: 'COLOR_MODE',
+    params: {mode:colormodestate.mode},
   })
 }
 

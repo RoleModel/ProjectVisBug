@@ -1,4 +1,5 @@
 import { BoxModelStyles } from '../styles.store'
+import { labelForLength } from '../../core'
 
 export class BoxModel extends HTMLElement {
 
@@ -177,7 +178,10 @@ export class BoxModel extends HTMLElement {
 
   createMeasurement(line_model, node_label_id=0) {
     const measurement = document.createElement('visbug-distance')
-    measurement.position = { line_model, node_label_id }
+    measurement.position = {
+      line_model: { ...line_model, label: labelForLength('space', line_model.d) },
+      node_label_id,
+    }
     this.$shadow.appendChild(measurement)
   }
 }
