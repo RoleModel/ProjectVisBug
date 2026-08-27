@@ -52,20 +52,24 @@ export const getColorScheme = () => {
 // load synced scheme choice on load
 getColorScheme()
 
-platform.contextMenus.create({
-  id:     'color-scheme',
-  title:  'Theme',
-  contexts: ['all'],
-})
-
-scheme_option.forEach(option => {
+// onInstalled fires once per install/update/enable — not on every service
+// worker wake-up — so this runs exactly once, unlike top-level code.
+platform.runtime.onInstalled.addListener(() => {
   platform.contextMenus.create({
-    id:       option,
-    parentId: 'color-scheme',
-    title:    ' '+option,
-    checked:  false,
-    type:     'radio',
+    id:     'color-scheme',
+    title:  'Theme',
     contexts: ['all'],
+  })
+
+  scheme_option.forEach(option => {
+    platform.contextMenus.create({
+      id:       option,
+      parentId: 'color-scheme',
+      title:    ' '+option,
+      checked:  false,
+      type:     'radio',
+      contexts: ['all'],
+    })
   })
 })
 

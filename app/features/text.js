@@ -36,3 +36,6 @@ export function EditText(elements) {
 
   hotkeys('escape,esc', cleanup)
 }
+
+/** Ends any in-progress editing, so switching tools can't strand a live caret. */
+export const exitTextEditing = () => cleanup()

@@ -7,7 +7,7 @@ import {
 } from '../'
 
 import {
-  Selectable, Moveable, Padding, Margin, EditText, Font,
+  Selectable, Moveable, Padding, Margin, EditText, exitTextEditing, Font,
   Flex, Search, ColorPicker, BoxShadow, HueShift, MetaTip,
   Guides, Screenshot, Position, Accessibility, draggable
 } from '../../features/'
@@ -270,8 +270,13 @@ export default class VisBug extends HTMLElement {
 
   text() {
     this.selectorEngine.onSelectedUpdate(EditText)
-    this.deactivate_feature = () =>
+    this.deactivate_feature = () => {
       this.selectorEngine.removeSelectedCallback(EditText)
+      // Switching tools mid-edit left the caret and contenteditable behind
+      // on whatever element was being edited, since only the selection
+      // callback was torn down.
+      exitTextEditing()
+    }
   }
 
   align() {

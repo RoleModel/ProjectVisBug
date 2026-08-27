@@ -2,11 +2,6 @@ import {gimmeToggle} from "./contextmenu/launcher.js"
 import {getColorMode} from "./contextmenu/colormode.js"
 import {getColorScheme} from "./contextmenu/colorscheme.js"
 
-const state = {
-  loaded:   {},
-  injected: {},
-}
-
 var platform = typeof browser === 'undefined'
   ? chrome
   : browser
@@ -20,23 +15,31 @@ const pushPreferences = () => {
   getColorScheme()
 }
 
+// Whether VisBug is already loaded in this tab, and if so, currently shown.
+// The background service worker gets killed and restarted by the browser
+// whenever it's idle, wiping any in-memory bookkeeping, so the tab itself —
+// not worker memory — has to be the source of truth. `null` means no content
+// script answered at all (never loaded here, or the page navigated since).
+const status = tab_id =>
+  platform.tabs.sendMessage(tab_id, {action: 'PING'}).catch(() => null)
+
 const toggle = async ({id:tab_id}) => {
-  // toggle out: it's currently loaded and injected
-  if (state.loaded[tab_id] && state.injected[tab_id]) {
+  const loaded = await status(tab_id)
+
+  // it's currently shown: hide it
+  if (loaded?.injected) {
     await platform.scripting.executeScript({
       target: {tabId: tab_id},
       files: ['toolbar/eject.js'],
     })
-    state.injected[tab_id] = false
   }
 
-  // toggle in: it's loaded and needs injected
-  else if (state.loaded[tab_id] && !state.injected[tab_id]) {
+  // it's loaded but hidden: show it again
+  else if (loaded) {
     await platform.scripting.executeScript({
       target: {tabId: tab_id},
       files: ['toolbar/restore.js'],
     })
-    state.injected[tab_id] = true
     pushPreferences()
   }
 
@@ -51,15 +54,8 @@ const toggle = async ({id:tab_id}) => {
       files: ['toolbar/inject.js'],
     })
 
-    state.loaded[tab_id]    = true
-    state.injected[tab_id]  = true
     pushPreferences()
   }
-
-  platform.tabs.onUpdated.addListener(function(tabId) {
-    if (tabId === tab_id)
-      state.loaded[tabId] = false
-  })
 }
 
 const toggleIn = tab =>
@@ -68,9 +64,9 @@ const toggleIn = tab =>
     // Web Store tab, a PDF viewer, or a file:// URL while "Allow access to
     // file URLs" is switched off for VisBug in chrome://extensions.
     //
-    // There's nothing to recover — the state flags are set after the awaits,
-    // so a failed launch leaves them untouched and the next click retries.
-    // Say it once rather than leaving an uncaught rejection on the worker.
+    // There's nothing to recover — status() re-checks the tab fresh on the
+    // next click regardless. Say it once rather than leaving an uncaught
+    // rejection on the worker.
     console.warn('VisBug could not launch in this tab:', why?.message ?? why)
   })
 
