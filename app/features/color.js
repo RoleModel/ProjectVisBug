@@ -2,6 +2,7 @@ import $ from 'blingblingjs'
 import { TinyColor } from '@ctrl/tinycolor'
 import Color from 'colorjs.io'
 import { getStyle, contrast_color } from '../utilities/'
+import { editStyle } from '../core'
 
 const state = {
   active_color: 'undefined',
@@ -23,27 +24,27 @@ export function ColorPicker(pallete, selectorEngine) {
 
   fgInput.on('input', ({target:{value}}) => {
     state.elements.map(el =>
-      el.style['color'] = value)
+      editStyle(el, 'color', value, 'color'))
 
     foregroundPicker[0].style.setProperty(`--contextual_color`, value)
   })
 
   bgInput.on('input', ({target:{value}}) => {
     state.elements.map(el =>
-      el.style[el instanceof SVGElement
+      editStyle(el, el instanceof SVGElement
         ? 'fill'
         : 'backgroundColor'
-      ] = value)
+      , value, 'background'))
 
     backgroundPicker[0].style.setProperty(`--contextual_color`, value)
   })
 
   boInput.on('input', ({target:{value}}) => {
     state.elements.map(el =>
-      el.style[el instanceof SVGElement
+      editStyle(el, el instanceof SVGElement
         ? 'stroke'
         : 'borderColor'
-      ] = value)
+      , value, 'border color'))
 
     borderPicker[0].style.setProperty(`--contextual_color`, value)
   })

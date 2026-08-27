@@ -1,5 +1,6 @@
 import hotkeys from 'hotkeys-js'
 import { metaKey, getStyle, showHideSelected } from '../utilities/'
+import { editStyle, getAuthoredStyle } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -45,8 +46,9 @@ export function BoxShadow({selection}) {
 }
 
 const ensureHasShadow = el => {
-  if (el.style.boxShadow == '' || el.style.boxShadow == 'none')
-    el.style.boxShadow = 'hsla(0,0%,0%,30%) 0 0 0 0'
+  const current = getAuthoredStyle(el, 'boxShadow')
+  if (current == '' || current == 'none')
+    editStyle(el, 'boxShadow', 'hsla(0,0%,0%,30%) 0 0 0 0', 'box shadow')
   return el
 }
 
@@ -110,5 +112,5 @@ export function changeBoxShadow(els, direction, prop) {
       return payload
     })
     .forEach(({el, style, value}) =>
-      el.style[style] = value.join(' '))
+      editStyle(el, style, value.join(' '), 'box shadow'))
 }

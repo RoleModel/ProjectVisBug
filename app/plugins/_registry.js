@@ -18,6 +18,7 @@ import { commands as detect_overflows_commands, description as detect_overflows_
 import { commands as loop_thru_widths_commands, description as loop_thru_widths_description, default as LoopThruWidths } from './loop-through-widths'
 // import { commands as placeholdifier_commands, description as placeholdifier_description, default as PlaceholdifierPlugin } from './placeholdifier'
 import { commands as expand_text_commands, description as expand_text_description, default as ExpandTextPlugin } from './expand-text'
+import { commands as export_commands, description as export_description, default as ExportPlugin } from './export'
 
 const commandsToHash = (plugin_commands, plugin_fn) =>
   plugin_commands.reduce((commands, command) =>
@@ -45,6 +46,7 @@ export const PluginRegistry = new Map(Object.entries({
   ...commandsToHash(loop_thru_widths_commands, LoopThruWidths),
   // ...commandsToHash(placeholdifier_commands, PlaceholdifierPlugin),
   ...commandsToHash(expand_text_commands, ExpandTextPlugin),
+  ...commandsToHash(export_commands, ExportPlugin),
 }))
 
 export const PluginHints = [
@@ -67,6 +69,7 @@ export const PluginHints = [
   {command: loop_thru_widths_commands[0], description: loop_thru_widths_description},
   // {command: placeholdifier_commands[0], description: placeholdifier_description},
   {command: expand_text_commands[0], description: expand_text_description},
+  {command: export_commands[0], description: export_description},
   // ...colorblind_commands.map(cbc => {
   //   return {
   //     command: cbc, description: `simulate ${cbc}`

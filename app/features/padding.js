@@ -1,5 +1,6 @@
 import hotkeys from 'hotkeys-js'
 import { metaKey, getStyle, getSide, showHideSelected, expandBorders } from '../utilities/'
+import { editStyle } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -51,7 +52,7 @@ export function padElement(els, direction) {
           : payload.current + payload.amount
       }))
     .forEach(({el, style, padding}) =>
-      el.style[style] = `${padding < 0 ? 0 : padding}px`)
+      editStyle(el, style, `${padding < 0 ? 0 : padding}px`, 'padding'))
 }
 
 export function padAllElementSides(els, keycommand) {

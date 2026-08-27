@@ -1,5 +1,6 @@
 import hotkeys from 'hotkeys-js'
 import { metaKey, getStyle, showHideSelected } from '../utilities/'
+import { editStyle, getAuthoredStyle } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -37,18 +38,18 @@ export function Font({selection}) {
 
   hotkeys('cmd+b', e => {
     selection().forEach(el =>
-      el.style.fontWeight =
-        el.style.fontWeight == 'bold'
+      editStyle(el, 'fontWeight',
+        getAuthoredStyle(el, 'fontWeight') == 'bold'
           ? null
-          : 'bold')
+          : 'bold', 'bold'))
   })
 
   hotkeys('cmd+i', e => {
     selection().forEach(el =>
-      el.style.fontStyle =
-        el.style.fontStyle == 'italic'
+      editStyle(el, 'fontStyle',
+        getAuthoredStyle(el, 'fontStyle') == 'italic'
           ? null
-          : 'italic')
+          : 'italic', 'italic'))
   })
 
   return () => {
@@ -82,7 +83,7 @@ export function changeLeading(els, direction) {
           : payload.current + payload.amount
       }))
     .forEach(({el, style, value}) =>
-      el.style[style] = `${value}px`)
+      editStyle(el, style, `${value}px`, 'leading'))
 }
 
 export function changeKerning(els, direction) {
@@ -108,7 +109,7 @@ export function changeKerning(els, direction) {
           : (payload.current + payload.amount).toFixed(2)
       }))
     .forEach(({el, style, value}) =>
-      el.style[style] = `${value <= -2 ? -2 : value}px`)
+      editStyle(el, style, `${value <= -2 ? -2 : value}px`, 'kerning'))
 }
 
 export function changeFontSize(els, direction) {
@@ -128,7 +129,7 @@ export function changeFontSize(els, direction) {
           : payload.current + payload.amount
       }))
     .forEach(({el, style, font_size}) =>
-      el.style[style] = `${font_size <= 6 ? 6 : font_size}px`)
+      editStyle(el, style, `${font_size <= 6 ? 6 : font_size}px`, 'font size'))
 }
 
 const weightMap = {
@@ -156,10 +157,10 @@ export function changeFontWeight(els, direction) {
           : weightMap[payload.current] + 1
       }))
     .forEach(({el, style, value}) =>
-      el.style[style] = weightOptions[value < 0 ? 0 : value >= weightOptions.length
+      editStyle(el, style, weightOptions[value < 0 ? 0 : value >= weightOptions.length
         ? weightOptions.length
         : value
-      ])
+      ], 'font weight'))
 }
 
 const alignMap = {
@@ -186,5 +187,5 @@ export function changeAlignment(els, direction) {
           : alignMap[payload.current] + 1
       }))
     .forEach(({el, style, value}) =>
-      el.style[style] = alignOptions[value < 0 ? 0 : value >= 2 ? 2: value])
+      editStyle(el, style, alignOptions[value < 0 ? 0 : value >= 2 ? 2: value], 'text align'))
 }

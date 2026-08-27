@@ -1,5 +1,6 @@
 import hotkeys from 'hotkeys-js'
 import { metaKey, getStyle } from '../utilities/'
+import { editStyle } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -53,7 +54,7 @@ export function Flex({selection}) {
 }
 
 const ensureFlex = el => {
-  el.style.display = 'flex'
+  editStyle(el, 'display', 'flex', 'flex')
   return el
 }
 
@@ -71,7 +72,7 @@ export function changeDirection(els, value) {
   els
     .map(ensureFlex)
     .map(el => {
-      el.style.flexDirection = value
+      editStyle(el, 'flexDirection', value, 'flex direction')
     })
 }
 
@@ -94,7 +95,7 @@ export function changeHAlignment(els, direction) {
           : h_alignMap[payload.current] + 1
       }))
     .forEach(({el, style, value}) =>
-      el.style[style] = h_alignOptions[value < 0 ? 0 : value >= 2 ? 2: value])
+      editStyle(el, style, h_alignOptions[value < 0 ? 0 : value >= 2 ? 2: value], 'align'))
 }
 
 const v_alignMap      = {normal: 0,'flex-start': 0,'center': 1,'flex-end': 2,}
@@ -116,7 +117,7 @@ export function changeVAlignment(els, direction) {
           : h_alignMap[payload.current] + 1
       }))
     .forEach(({el, style, value}) =>
-      el.style[style] = v_alignOptions[value < 0 ? 0 : value >= 2 ? 2: value])
+      editStyle(el, style, v_alignOptions[value < 0 ? 0 : value >= 2 ? 2: value], 'align'))
 }
 
 const h_distributionMap      = {normal: 1,'space-around': 0,'': 1,'space-between': 2,}
@@ -138,7 +139,7 @@ export function changeHDistribution(els, direction) {
           : h_distributionMap[payload.current] + 1
       }))
     .forEach(({el, style, value}) =>
-      el.style[style] = h_distributionOptions[value < 0 ? 0 : value >= 2 ? 2: value])
+      editStyle(el, style, h_distributionOptions[value < 0 ? 0 : value >= 2 ? 2: value], 'distribute'))
 }
 
 const v_distributionMap      = {normal: 1,'space-around': 0,'': 1,'space-between': 2,}
@@ -160,7 +161,7 @@ export function changeVDistribution(els, direction) {
           : v_distributionMap[payload.current] + 1
       }))
     .forEach(({el, style, value}) =>
-      el.style[style] = v_distributionOptions[value < 0 ? 0 : value >= 2 ? 2: value])
+      editStyle(el, style, v_distributionOptions[value < 0 ? 0 : value >= 2 ? 2: value], 'distribute'))
 }
 
 const orderMap     = {row: 0, 'row-reverse': 1, column: 2, 'column-reverse': 3,}
@@ -184,7 +185,7 @@ export function changeOrder(els, direction) {
             ? orderMap[payload.current] : orderMap[payload.current] - 1
       }))
       .forEach(({el, style, value}) =>
-        el.style[style] = orderOptions[value])
+        editStyle(el, style, orderOptions[value], 'order'))
 }
 
 const wrapMap     = {nowrap: 0, 'wrap': 1,}
@@ -208,5 +209,5 @@ export function changeWrap(els, direction) {
             ? wrapMap[payload.current] : wrapMap[payload.current] + 1
       }))
       .forEach(({el, style, value}) =>
-        el.style[style] = wrapOptions[value])
+        editStyle(el, style, wrapOptions[value], 'wrap'))
 }
