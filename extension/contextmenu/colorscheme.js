@@ -1,3 +1,5 @@
+import { tellActiveTab } from './send.js'
+
 const schemestoragekey = 'visbug-color-scheme';
 const defaultcolorscheme = 'auto';
 
@@ -16,11 +18,9 @@ var platform = typeof browser === 'undefined'
   : browser
 
 const sendColorScheme = () => {
-  platform.tabs.query({active: true, currentWindow: true}, ([tab]) => {
-    tab && platform.tabs.sendMessage(tab.id, {
-      action: 'COLOR_SCHEME',
-      params: {mode:colorschemestate.mode},
-    })
+  tellActiveTab({
+    action: 'COLOR_SCHEME',
+    params: {mode:colorschemestate.mode},
   })
 }
 
@@ -52,20 +52,24 @@ export const getColorScheme = () => {
 // load synced scheme choice on load
 getColorScheme()
 
-platform.contextMenus.create({
-  id:     'color-scheme',
-  title:  'Theme',
-  contexts: ['all'],
-})
-
-scheme_option.forEach(option => {
+// onInstalled fires once per install/update/enable — not on every service
+// worker wake-up — so this runs exactly once, unlike top-level code.
+platform.runtime.onInstalled.addListener(() => {
   platform.contextMenus.create({
-    id:       option,
-    parentId: 'color-scheme',
-    title:    ' '+option,
-    checked:  false,
-    type:     'radio',
+    id:     'color-scheme',
+    title:  'Theme',
     contexts: ['all'],
+  })
+
+  scheme_option.forEach(option => {
+    platform.contextMenus.create({
+      id:       option,
+      parentId: 'color-scheme',
+      title:    ' '+option,
+      checked:  false,
+      type:     'radio',
+      contexts: ['all'],
+    })
   })
 })
 

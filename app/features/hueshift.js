@@ -3,6 +3,7 @@ import hotkeys from 'hotkeys-js'
 import { TinyColor } from '@ctrl/tinycolor'
 
 import { metaKey, getStyle, showHideSelected } from '../utilities/'
+import { editStyle, getAuthoredStyle } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -90,7 +91,7 @@ export function changeHue(els, direction, prop, ColorTool) {
         case 'foreground':
           return { el, current: foreground.color.toHsl(), style: foreground.style }
         case 'border': {
-          if (el.style.border === '') el.style.border = '1px solid black'
+          if (getAuthoredStyle(el, 'border') === '') editStyle(el, 'border', '1px solid black', 'border')
           return { el, current: border.color.toHsl(), style: border.style }
         }
       }
@@ -117,7 +118,7 @@ export function changeHue(els, direction, prop, ColorTool) {
     })
     .forEach(({el, style, current}) => {
       let color = new TinyColor(current).setAlpha(current.a)
-      el.style[style] = color.toHslString()
+      editStyle(el, style, color.toHslString(), 'hue shift')
 
       if (style == 'color') ColorTool.foreground.color(color.toHslString())
       if (style == 'backgroundColor') ColorTool.background.color(color.toHslString())

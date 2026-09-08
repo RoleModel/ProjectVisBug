@@ -1,3 +1,5 @@
+import { tellActiveTab } from './send.js'
+
 const storagekey = 'visbug-color-mode'
 const defaultcolormode = 'hex'
 
@@ -23,11 +25,9 @@ var platform = typeof browser === 'undefined'
   : browser
 
 const sendColorMode = () => {
-  platform.tabs.query({active: true, currentWindow: true}, ([tab]) => {
-    tab && platform.tabs.sendMessage(tab.id, {
-      action: 'COLOR_MODE',
-      params: {mode:colormodestate.mode},
-    })
+  tellActiveTab({
+    action: 'COLOR_MODE',
+    params: {mode:colormodestate.mode},
   })
 }
 
@@ -73,20 +73,24 @@ export const getColorMode = () => {
 // load synced color choice on load
 getColorMode()
 
-platform.contextMenus.create({
-  id:     'color-mode',
-  title:  'Colors',
-  contexts: ['all'],
-})
-
-color_options.forEach(option => {
+// onInstalled fires once per install/update/enable — not on every service
+// worker wake-up — so this runs exactly once, unlike top-level code.
+platform.runtime.onInstalled.addListener(() => {
   platform.contextMenus.create({
-    id:       option,
-    parentId: 'color-mode',
-    title:    ' '+option,
-    checked:  false,
-    type:     'radio',
+    id:     'color-mode',
+    title:  'Colors',
     contexts: ['all'],
+  })
+
+  color_options.forEach(option => {
+    platform.contextMenus.create({
+      id:       option,
+      parentId: 'color-mode',
+      title:    ' '+option,
+      checked:  false,
+      type:     'radio',
+      contexts: ['all'],
+    })
   })
 })
 

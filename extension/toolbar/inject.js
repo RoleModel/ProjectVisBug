@@ -14,9 +14,15 @@ visbug.setAttribute('tutsBaseURL', src_path.slice(0, src_path.lastIndexOf('/')))
 
 document.body.prepend(visbug)
 
-platform.runtime.onMessage.addListener(request => {
+platform.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'COLOR_MODE')
     visbug.setAttribute('color-mode', request.params.mode)
   else if (request.action === 'COLOR_SCHEME')
     visbug.setAttribute("color-scheme", request.params.mode)
+  // Lets the background worker tell whether this tab already has VisBug
+  // loaded, since its own in-memory bookkeeping doesn't survive a service
+  // worker restart — without this it can re-run this file into a tab that
+  // already has it, redeclaring top-level bindings like `script` above.
+  else if (request.action === 'PING')
+    sendResponse({injected: !!document.querySelector('vis-bug')})
 })

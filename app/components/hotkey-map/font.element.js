@@ -1,13 +1,19 @@
 import { HotkeyMap } from './base.element'
 import { metaKey, altKey } from '../../utilities';
+import { hasScale } from '../../core'
 
 export class FontHotkeys extends HotkeyMap {
   constructor() {
     super()
 
     this._hotkey    = 'f'
-    this._usedkeys  = ['shift',metaKey]
+    this._usedkeys  = ['shift',metaKey,altKey]
     this.tool       = 'font'
+  }
+
+  /** A scale step where the page has a scale, pixels where it doesn't. */
+  step(kind) {
+    return hasScale(kind) ? 'one scale step' : '1px'
   }
 
   createCommand({e:{code}, hotkeys}) {
@@ -29,7 +35,7 @@ export class FontHotkeys extends HotkeyMap {
     // leading
     else if (hotkeys.shift && (code === 'ArrowUp' || code === 'ArrowDown')) {
       side    = 'leading'
-      amount  = '1px'
+      amount  = this.step('lineHeight')
 
       if (code === 'ArrowUp')
         negative  = 'increase'
@@ -47,10 +53,12 @@ export class FontHotkeys extends HotkeyMap {
       if (code === 'ArrowDown')
         negative  = 'decrease'
     }
-    // font size
+    // font size — alt is the way back to pixels once a type scale is in play
     else if (code === 'ArrowUp' || code === 'ArrowDown') {
       side    = 'font size'
-      amount  = '1px'
+      amount  = hotkeys.alt
+        ? `${hotkeys.shift ? 10 : 1}px`
+        : this.step('fontSize')
 
       if (code === 'ArrowUp')
         negative  = 'increase'

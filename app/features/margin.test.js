@@ -1,14 +1,13 @@
 import test from 'ava'
 
-import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool } 
+import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool, readStyle }
 from '../../tests/helpers'
 
 const tool            = 'margin'
 const test_selector   = '[intro] b'
 
 const getMarginTop = async page =>
-  await page.$eval(test_selector, el => 
-    el.style.marginTop)
+  await readStyle(page, test_selector, 'marginTop')
 
 test.beforeEach(async t => {
   await setupPptrTab(t)

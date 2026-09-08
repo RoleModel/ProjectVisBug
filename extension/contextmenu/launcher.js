@@ -9,10 +9,14 @@ export const gimmeToggle = toggleIn => {
   platform.action.onClicked.addListener(toggleIt)
 }
 
-platform.contextMenus.create({
-  id:     'launcher',
-  title:  'Show/Hide',
-  contexts: ['all'],
+// onInstalled fires once per install/update/enable — not on every service
+// worker wake-up — so this runs exactly once, unlike top-level code.
+platform.runtime.onInstalled.addListener(() => {
+  platform.contextMenus.create({
+    id:     'launcher',
+    title:  'Show/Hide',
+    contexts: ['all'],
+  })
 })
 
 platform.contextMenus.onClicked.addListener(({menuItemId}, tab) => {

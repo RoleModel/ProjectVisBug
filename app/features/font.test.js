@@ -1,15 +1,13 @@
 import test from 'ava'
 
-import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool, pptrMetaKey }
+import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool, pptrMetaKey, readStyle }
 from '../../tests/helpers'
 
 const tool            = 'font'
 const test_selector   = '[intro] b'
 
 const getInlineStyle = async (page, prop) =>
-  await page.$eval(test_selector, (el, prop) => {
-    return el.style[prop]
-  }, prop)
+  await readStyle(page, test_selector, prop)
 
 test.beforeEach(async t => {
   await setupPptrTab(t)

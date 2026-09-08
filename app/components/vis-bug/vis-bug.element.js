@@ -7,7 +7,7 @@ import {
 } from '../'
 
 import {
-  Selectable, Moveable, Padding, Margin, EditText, Font,
+  Selectable, Moveable, Padding, Margin, EditText, exitTextEditing, Font,
   Flex, Search, ColorPicker, BoxShadow, HueShift, MetaTip,
   Guides, Screenshot, Position, Accessibility, draggable
 } from '../../features/'
@@ -18,6 +18,7 @@ import {
   VisBugDarkStyles
 } from '../styles.store'
 
+import { copyPrompt } from '../../core'
 import { VisBugModel }            from './model'
 import * as Icons                 from './vis-bug.icons'
 import { provideSelectorEngine }  from '../../features/search'
@@ -121,6 +122,35 @@ export default class VisBug extends HTMLElement {
       })
     )
 
+    const copy_button = this.$shadow.querySelector('#copy-changes')
+
+    const flash = state => {
+      copy_button.setAttribute('data-state', state)
+      clearTimeout(this._copy_timer)
+      this._copy_timer = setTimeout(() =>
+        copy_button.removeAttribute('data-state'), 2000)
+    }
+
+    const runCopy = async e => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      try {
+        const { copied, count } = await copyPrompt()
+        flash(copied ? 'copied' : 'empty')
+        if (copied) console.info(`VisBug: copied changes for ${count} element${count === 1 ? '' : 's'}`)
+        else console.info('VisBug: nothing has been edited yet')
+      }
+      catch (err) {
+        console.error('VisBug: could not copy changes', err)
+        flash('failed')
+      }
+    }
+
+    copy_button.addEventListener('click', runCopy)
+    copy_button.addEventListener('keydown', e =>
+      (e.key === 'Enter' || e.key === ' ') && runCopy(e))
+
     hotkeys(`${metaKey}+/,${metaKey}+.`, e =>
       this.$shadow.host.style.display =
         this.$shadow.host.style.display === 'none'
@@ -172,17 +202,34 @@ export default class VisBug extends HTMLElement {
       </ol>
       <ol colors>
         <li class="color" id="foreground" aria-label="Text" aria-description="Change the text color">
-          <input type="color">
+          <input type="color" list="token_swatches">
           ${Icons.color_text}
         </li>
         <li class="color" id="background" aria-label="Background or Fill" aria-description="Change the background color or fill of svg">
-          <input type="color">
+          <input type="color" list="token_swatches">
           ${Icons.color_background}
         </li>
         <li class="color" id="border" aria-label="Border or Stroke" aria-description="Change the border color or stroke of svg">
-          <input type="color">
+          <input type="color" list="token_swatches">
           ${Icons.color_border}
         </li>
+        <li
+          id="copy-changes"
+          aria-label="Copy changes"
+          aria-description="Copy your edits as a prompt for a coding agent"
+          role="button"
+          tabindex="0"
+        >
+          ${Icons.copy}
+          <aside copy-changes>
+            <figcaption>
+              <h2>Copy changes</h2>
+              <p>Copy your edits as a prompt that tells a coding agent which elements changed and how</p>
+            </figcaption>
+          </aside>
+        </li>
+        <!-- filled from the page's own color tokens, see features/color.js -->
+        <datalist id="token_swatches"></datalist>
       </ol>
     `
   }
@@ -223,8 +270,13 @@ export default class VisBug extends HTMLElement {
 
   text() {
     this.selectorEngine.onSelectedUpdate(EditText)
-    this.deactivate_feature = () =>
+    this.deactivate_feature = () => {
       this.selectorEngine.removeSelectedCallback(EditText)
+      // Switching tools mid-edit left the caret and contenteditable behind
+      // on whatever element was being edited, since only the selection
+      // callback was torn down.
+      exitTextEditing()
+    }
   }
 
   align() {

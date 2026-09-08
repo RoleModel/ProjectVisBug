@@ -18,6 +18,7 @@ import {
   isSelectorValid, findNearestChildElement, findNearestParentElement,
   getTextShadowValues, isFixed, onRemove
 } from '../utilities/'
+import { editStyle, editClearStyles, history } from '../core'
 
 export function Selectable(visbug) {
   const page              = document.body
@@ -44,6 +45,8 @@ export function Selectable(visbug) {
 
     watchCommandKey()
 
+    hotkeys(`${metaKey}+z`, on_undo)
+    hotkeys(`${metaKey}+shift+z,${metaKey}+y`, on_redo)
     hotkeys(`${metaKey}+alt+c`, on_copy_styles)
     hotkeys(`${metaKey}+alt+v`, e => on_paste_styles())
     hotkeys('esc', on_esc)
@@ -147,13 +150,35 @@ export function Selectable(visbug) {
   const on_esc = _ =>
     unselect_all()
 
+  const on_undo = e => {
+    e.preventDefault()
+    history.undo() && refresh_selection()
+  }
+
+  const on_redo = e => {
+    e.preventDefault()
+    history.redo() && refresh_selection()
+  }
+
+  // undo can reparent or remove what's selected, so drop anything that left
+  // the tree and let the overlays re-measure what's still there
+  const refresh_selection = () => {
+    selected
+      .filter(el => !el.isConnected)
+      .map(el => el.getAttribute('data-label-id'))
+      .forEach(id => unselect(id))
+
+    tellWatchers()
+  }
+
   const on_duplicate = e => {
     const root_node = selected[0]
     if (!root_node) return
 
     const deep_clone = root_node.cloneNode(true)
     deep_clone.removeAttribute('data-selected')
-    root_node.parentNode.insertBefore(deep_clone, root_node.nextSibling)
+    history.recordDOM(deep_clone, () =>
+      root_node.parentNode.insertBefore(deep_clone, root_node.nextSibling), 'duplicate')
     e.preventDefault()
   }
 
@@ -161,8 +186,11 @@ export function Selectable(visbug) {
     selected.length && delete_all()
 
   const on_clearstyles = e =>
-    selected.forEach(el =>
-      el.attr('style', null))
+    history.transact('clear styles', () =>
+      selected.forEach(el => {
+        editClearStyles(el)
+        el.attr('style', null)
+      }))
 
   const on_copy = async e => {
     // if user has selected text, dont try to copy an element
@@ -252,7 +280,7 @@ export function Selectable(visbug) {
       selected.forEach(el => {
         window.copied_styles[index]
           .map(({prop, value}) =>
-            el.style[prop] = value)
+            editStyle(el, prop, value, 'paste styles'))
 
         index >= window.copied_styles.length - 1
           ? index = 0
@@ -289,25 +317,27 @@ export function Selectable(visbug) {
     if (key.split('+').includes('shift')) {
       let $selected = [...selected]
       unselect_all()
-      $selected.reverse().forEach(el => {
-        let l = el.children.length
-        while (el.children.length > 0) {
-          var node = el.childNodes[el.children.length - 1]
-          if (node.nodeName !== '#text')
-            select(node)
-          el.parentNode.prepend(node)
-        }
-        el.parentNode.removeChild(el)
-      })
+      history.transact('ungroup', () =>
+        $selected.reverse().forEach(el => {
+          while (el.children.length > 0) {
+            var node = el.childNodes[el.children.length - 1]
+            if (node.nodeName !== '#text')
+              select(node)
+            history.recordDOM(node, () => el.parentNode.prepend(node), 'ungroup')
+          }
+          history.recordDOM(el, () => el.parentNode.removeChild(el), 'ungroup')
+        }))
     }
     else {
       let div = document.createElement('div')
-      selected[0].parentNode.prepend(
-        selected.reverse().reduce((div, el) => {
-          div.appendChild(el)
-          return div
-        }, div)
-      )
+      const anchor = selected[0].parentNode
+
+      history.transact('group', () => {
+        selected.reverse().forEach(el =>
+          history.recordDOM(el, () => div.appendChild(el), 'group'))
+        history.recordDOM(div, () => anchor.prepend(div), 'group')
+      })
+
       unselect_all()
       select(div)
     }
@@ -500,7 +530,11 @@ export function Selectable(visbug) {
       else if (el.parentNode)   return el.parentNode
     })
 
-    Array.from([...selected, ...labels, ...handles]).forEach(el =>
+    history.transact('delete', () =>
+      selected.forEach(el =>
+        history.recordDOM(el, () => el.remove(), 'delete')))
+
+    Array.from([...labels, ...handles]).forEach(el =>
       el.remove())
 
     labels    = []

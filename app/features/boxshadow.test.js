@@ -1,13 +1,13 @@
 import test from 'ava'
 
-import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool, pptrMetaKey }
+import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool, pptrMetaKey, readStyle }
 from '../../tests/helpers'
 
 const tool            = 'boxshadow'
 const test_selector   = '[intro] b'
 
 const getShadowValues = async (page, testEl = test_selector) => {
-  const shadowStr = await page.$eval(testEl, el => el.style.boxShadow)
+  const shadowStr = await readStyle(page, testEl, 'boxShadow')
   return parseShadowValues(shadowStr)
 }
 

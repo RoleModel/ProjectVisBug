@@ -1,6 +1,7 @@
 import $ from 'blingblingjs'
 import hotkeys from 'hotkeys-js'
 import { metaKey, getStyle, getSide, showHideSelected } from '../utilities/'
+import { editStyle, history } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -81,8 +82,10 @@ export function draggable({el, surface = el, cursor = 'move', clickEvent}) {
     if(e.target !== state.surface) return
     e.preventDefault()
 
+    history.beginGesture('drag')
+
     if(getComputedStyle(el).position == 'static')
-      el.style.position = 'relative'
+      editStyle(el, 'position', 'relative', 'position')
     el.style.willChange = 'top,left'
 
     if (el instanceof SVGElement) {
@@ -114,6 +117,7 @@ export function draggable({el, surface = el, cursor = 'move', clickEvent}) {
 
     state.mouse.down = false
     el.style.willChange = null
+    history.endGesture()
 
     if (el instanceof SVGElement) {
       const translate = el.getAttribute('transform')
@@ -149,8 +153,8 @@ export function draggable({el, surface = el, cursor = 'move', clickEvent}) {
       )`)
     }
     else {
-      el.style.left = state.element.x + e.clientX - state.mouse.x + 'px'
-      el.style.top  = state.element.y + e.clientY - state.mouse.y + 'px'
+      editStyle(el, 'left', state.element.x + e.clientX - state.mouse.x + 'px', 'drag')
+      editStyle(el, 'top',  state.element.y + e.clientY - state.mouse.y + 'px', 'drag')
     }
 
     state.travelDistance += 1
@@ -181,7 +185,7 @@ export function positionElement(els, direction) {
     .forEach(({el, style, position}) =>
       el instanceof SVGElement
         ? setTranslateOnSVG(el, direction, position)
-        : el.style[style] = position + 'px')
+        : editStyle(el, style, position + 'px', 'position'))
 }
 
 const extractCurrentValueAndSide = (el, direction) => {
@@ -237,6 +241,6 @@ const determineNegativity = (el, direction) =>
 
 const ensurePositionable = el => {
   if (el instanceof HTMLElement)
-    el.style.position = 'relative'
+    editStyle(el, 'position', 'relative', 'position')
   return el
 }

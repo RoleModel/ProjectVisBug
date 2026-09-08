@@ -1,5 +1,6 @@
 import hotkeys from 'hotkeys-js'
 import { metaKey, getStyle, getSide, showHideSelected } from '../utilities/'
+import { editStyle, stepStyleToken } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -35,23 +36,39 @@ export function Margin(visbug) {
 }
 
 export function pushElement(els, direction) {
+  const keys      = direction.split('+')
+  const negative  = keys.includes('alt')
+  const raw_px    = keys.includes('shift')  // see padding.js — shift means px
+  const style     = 'margin' + getSide(direction)
+
   els
     .map(el => showHideSelected(el))
     .map(el => ({
       el,
-      style:    'margin' + getSide(direction),
-      current:  parseInt(getStyle(el, 'margin' + getSide(direction)), 10),
-      amount:   direction.split('+').includes('shift') ? 10 : 1,
-      negative: direction.split('+').includes('alt'),
+      current:  parseInt(getStyle(el, style), 10),
+      amount:   raw_px ? 10 : 1,
+      negative,
     }))
+    .map(payload =>
+      Object.assign(payload, {
+        token: raw_px ? null : stepStyleToken({
+          el:       payload.el,
+          prop:     style,
+          kind:     'space',
+          delta:    negative ? -1 : 1,
+          current:  payload.current,
+        })
+      }))
     .map(payload =>
       Object.assign(payload, {
         margin: payload.negative
           ? payload.current - payload.amount
           : payload.current + payload.amount
       }))
-    .forEach(({el, style, margin}) =>
-      el.style[style] = `${margin < 0 ? 0 : margin}px`)
+    .forEach(({el, token, margin}) =>
+      editStyle(el, style, token
+        ? token.css
+        : `${margin < 0 ? 0 : margin}px`, 'margin'))
 }
 
 export function pushAllElementSides(els, keycommand) {

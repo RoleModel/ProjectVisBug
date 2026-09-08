@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool, pptrMetaKey }
+import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool, pptrMetaKey, readStyle }
 from '../../tests/helpers'
 
 const tool            = 'align'
@@ -30,16 +30,16 @@ test('Can adjust justify-content', async t => {
 
   await page.click(test_selector)
   await page.keyboard.press('ArrowRight')
-  let justifyStr = await page.$eval(test_selector, el => el.style.justifyContent)
+  let justifyStr = await readStyle(page, test_selector, 'justifyContent')
   t.true(justifyStr === "center")
 
   await page.keyboard.press('ArrowRight')
-  justifyStr = await page.$eval(test_selector, el => el.style.justifyContent)
+  justifyStr = await readStyle(page, test_selector, 'justifyContent')
   t.true(justifyStr === "flex-end")
 
   await page.keyboard.press('ArrowLeft')
   await page.keyboard.press('ArrowLeft')
-  justifyStr = await page.$eval(test_selector, el => el.style.justifyContent)
+  justifyStr = await readStyle(page, test_selector, 'justifyContent')
   t.true(justifyStr === "flex-start")
 
   t.pass()
@@ -51,16 +51,16 @@ test('Can adjust align-items', async t => {
 
   await page.click(test_selector)
   await page.keyboard.press('ArrowDown')
-  let alignStr = await page.$eval(test_selector, el => el.style.alignItems)
+  let alignStr = await readStyle(page, test_selector, 'alignItems')
   t.true(alignStr === "center")
 
   await page.keyboard.press('ArrowDown')
-  alignStr = await page.$eval(test_selector, el => el.style.alignItems)
+  alignStr = await readStyle(page, test_selector, 'alignItems')
   t.true(alignStr === "flex-end")
 
   await page.keyboard.press('ArrowUp')
   await page.keyboard.press('ArrowUp')
-  alignStr = await page.$eval(test_selector, el => el.style.alignItems)
+  alignStr = await readStyle(page, test_selector, 'alignItems')
   t.true(alignStr === "flex-start")
 
   t.pass()
@@ -73,7 +73,7 @@ test('Can apply space-around', async t => {
   await page.click(test_selector)
   await page.keyboard.down('Shift')
   await page.keyboard.press('ArrowLeft')
-  let justifyStr = await page.$eval(test_selector, el => el.style.justifyContent)
+  let justifyStr = await readStyle(page, test_selector, 'justifyContent')
   t.true(justifyStr === "space-around")
 
   t.pass()
@@ -86,7 +86,7 @@ test('Can apply space-between', async t => {
   await page.click(test_selector)
   await page.keyboard.down('Shift')
   await page.keyboard.press('ArrowRight')
-  let justifyStr = await page.$eval(test_selector, el => el.style.justifyContent)
+  let justifyStr = await readStyle(page, test_selector, 'justifyContent')
   t.true(justifyStr === "space-between")
 
   t.pass()
@@ -100,19 +100,19 @@ test('Can adjust wrapping', async t => {
   await page.keyboard.down(metaKey)
   await page.keyboard.down('Shift')
   await page.keyboard.press('ArrowUp')
-  let wrapStr = await page.$eval(test_selector, el => el.style.flexWrap)
+  let wrapStr = await readStyle(page, test_selector, 'flexWrap')
   t.true(wrapStr === 'nowrap')
 
   await page.keyboard.press('ArrowUp')
-  wrapStr = await page.$eval(test_selector, el => el.style.flexWrap)
+  wrapStr = await readStyle(page, test_selector, 'flexWrap')
   t.true(wrapStr === 'nowrap')
 
   await page.keyboard.press('ArrowDown')
-  wrapStr = await page.$eval(test_selector, el => el.style.flexWrap)
+  wrapStr = await readStyle(page, test_selector, 'flexWrap')
   t.true(wrapStr === 'wrap')
 
   await page.keyboard.press('ArrowDown')
-  wrapStr = await page.$eval(test_selector, el => el.style.flexWrap)
+  wrapStr = await readStyle(page, test_selector, 'flexWrap')
   t.true(wrapStr === 'wrap')
 
   t.pass()
@@ -126,19 +126,19 @@ test('Can adjust row order', async t => {
   await page.keyboard.down(metaKey)
   await page.keyboard.down('Shift')
   await page.keyboard.press('ArrowLeft')
-  let dirStr = await page.$eval(test_selector, el => el.style.flexDirection)
+  let dirStr = await readStyle(page, test_selector, 'flexDirection')
   t.true(dirStr === 'row-reverse')
 
   await page.keyboard.press('ArrowLeft')
-  dirStr = await page.$eval(test_selector, el => el.style.flexDirection)
+  dirStr = await readStyle(page, test_selector, 'flexDirection')
   t.true(dirStr === 'row-reverse')
 
   await page.keyboard.press('ArrowRight')
-  dirStr = await page.$eval(test_selector, el => el.style.flexDirection)
+  dirStr = await readStyle(page, test_selector, 'flexDirection')
   t.true(dirStr === 'row')
 
   await page.keyboard.press('ArrowRight')
-  dirStr = await page.$eval(test_selector, el => el.style.flexDirection)
+  dirStr = await readStyle(page, test_selector, 'flexDirection')
   t.true(dirStr === 'row')
 
   t.pass()
@@ -153,19 +153,19 @@ test('Can adjust column order', async t => {
   await page.keyboard.press('ArrowUp')
   await page.keyboard.down('Shift')
   await page.keyboard.press('ArrowLeft')
-  let dirStr = await page.$eval(test_selector, el => el.style.flexDirection)
+  let dirStr = await readStyle(page, test_selector, 'flexDirection')
   t.true(dirStr === 'column-reverse')
 
   await page.keyboard.press('ArrowLeft')
-  dirStr = await page.$eval(test_selector, el => el.style.flexDirection)
+  dirStr = await readStyle(page, test_selector, 'flexDirection')
   t.true(dirStr === 'column-reverse')
 
   await page.keyboard.press('ArrowRight')
-  dirStr = await page.$eval(test_selector, el => el.style.flexDirection)
+  dirStr = await readStyle(page, test_selector, 'flexDirection')
   t.true(dirStr === 'column')
 
   await page.keyboard.press('ArrowRight')
-  dirStr = await page.$eval(test_selector, el => el.style.flexDirection)
+  dirStr = await readStyle(page, test_selector, 'flexDirection')
   t.true(dirStr === 'column')
 
   t.pass()

@@ -1,5 +1,6 @@
 import hotkeys from 'hotkeys-js'
 import { metaKey, getStyle, showHideSelected } from '../utilities/'
+import { editStyle, getAuthoredStyle, stepScaleFrom } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -9,6 +10,11 @@ const key_events = 'up,down,left,right'
   .substring(1)
 
 const command_events = `${metaKey}+up,${metaKey}+shift+up,${metaKey}+down,${metaKey}+shift+down,${metaKey}+left,${metaKey}+shift+left,${metaKey}+right,${metaKey}+shift+right`
+
+// Shadows and radii come out of a design system as whole values, not as a pile
+// of offsets you dial in — so they get their own keys rather than sharing the
+// arrows with the per-component editing above.
+const token_events = '[,],shift+[,shift+]'
 
 export function BoxShadow({selection}) {
   hotkeys(key_events, (e, handler) => {
@@ -37,16 +43,43 @@ export function BoxShadow({selection}) {
       : changeBoxShadow(selection(), keys, 'inset')
   })
 
+  hotkeys(token_events, (e, handler) => {
+    if (e.cancelBubble) return
+
+    e.preventDefault()
+
+    const keys  = handler.key.split('+')
+    const delta = keys.includes(']') ? 1 : -1
+
+    keys.includes('shift')
+      ? stepToken(selection(), 'borderRadius', 'radius', delta)
+      : stepToken(selection(), 'boxShadow',    'shadow', delta)
+  })
+
   return () => {
     hotkeys.unbind(key_events)
     hotkeys.unbind(command_events)
+    hotkeys.unbind(token_events)
     hotkeys.unbind('up,down,left,right')
   }
 }
 
+/**
+ * Walk `prop` along a named scale the page already defines. No scale, no edit —
+ * we'd rather do nothing than invent a shadow the design system never had.
+ */
+const stepToken = (els, prop, kind, delta) =>
+  els
+    .map(el => showHideSelected(el, 1500))
+    .forEach(el => {
+      const token = stepScaleFrom({ el, prop, kind, delta })
+      if (token) editStyle(el, prop, token.css, kind)
+    })
+
 const ensureHasShadow = el => {
-  if (el.style.boxShadow == '' || el.style.boxShadow == 'none')
-    el.style.boxShadow = 'hsla(0,0%,0%,30%) 0 0 0 0'
+  const current = getAuthoredStyle(el, 'boxShadow')
+  if (current == '' || current == 'none')
+    editStyle(el, 'boxShadow', 'hsla(0,0%,0%,30%) 0 0 0 0', 'box shadow')
   return el
 }
 
@@ -110,5 +143,5 @@ export function changeBoxShadow(els, direction, prop) {
       return payload
     })
     .forEach(({el, style, value}) =>
-      el.style[style] = value.join(' '))
+      editStyle(el, style, value.join(' '), 'box shadow'))
 }

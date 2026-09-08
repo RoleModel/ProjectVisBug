@@ -1,14 +1,13 @@
 import test from 'ava'
 
-import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool }
+import { setupPptrTab, teardownPptrTab, changeMode, getActiveTool, readStyle }
 from '../../tests/helpers'
 
 const tool            = 'padding'
 const test_selector   = '[intro] b'
 
 const getPaddingTop = async page =>
-  await page.$eval(test_selector, el =>
-    el.style.paddingTop)
+  await readStyle(page, test_selector, 'paddingTop')
 
 test.beforeEach(async t => {
   await setupPptrTab(t)

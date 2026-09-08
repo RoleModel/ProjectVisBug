@@ -47,13 +47,13 @@ export class Distance extends HTMLElement {
       : '.5 0 1')
   }
 
-  render({q,d}, node_label_id) {
+  render({q,d,label}, node_label_id) {
     this.$shadow.host.setAttribute('data-label-id', node_label_id)
 
     return `
       <figure quadrant="${q}">
         <div></div>
-        <figcaption>${Math.round(d)}</figcaption>
+        <figcaption>${label || Math.round(d)}</figcaption>
         <div></div>
       </figure>
     `

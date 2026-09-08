@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Export fixture</title>
+
+<!-- same-origin external sheet -->
+<link rel="stylesheet" href="export.css">
+<!-- print-media sheet, should get wrapped in @media print -->
+<link rel="stylesheet" href="export-print.css" media="print">
+<!-- cross-origin sheet: cssRules throws, must be fetched -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap">
+
+<style>
+  /* inline <style> block */
+  body { margin: 0; padding: 32px; font-family: Inter, system-ui, sans-serif; }
+  h1 { font-size: 28px; }
+</style>
+
+<h1>Export fixture</h1>
+<div class="card">
+  <img src="assets/logo.png" alt="relative image">
+  <a href="/somewhere">relative link</a>
+</div>
+<div class="row"><div class="chip">a</div><div class="chip">b</div><div class="chip">c</div></div>
+
+<vis-bug></vis-bug>
+<script src="bundle.js" type="module" defer></script>

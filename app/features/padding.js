@@ -1,5 +1,6 @@
 import hotkeys from 'hotkeys-js'
 import { metaKey, getStyle, getSide, showHideSelected, expandBorders } from '../utilities/'
+import { editStyle, stepStyleToken } from '../core'
 
 const key_events = 'up,down,left,right'
   .split(',')
@@ -35,23 +36,41 @@ export function Padding(visbug) {
 }
 
 export function padElement(els, direction) {
+  const keys      = direction.split('+')
+  const negative  = keys.includes('alt')
+  // shift has always meant "coarser"; on a page with a spacing scale it doubles
+  // as the escape hatch back to raw px, since the scale is the coarse mode now
+  const raw_px    = keys.includes('shift')
+  const style     = 'padding' + getSide(direction)
+
   els
     .map(el => showHideSelected(el))
     .map(el => ({
       el,
-      style:    'padding' + getSide(direction),
-      current:  parseInt(getStyle(el, 'padding' + getSide(direction)), 10),
-      amount:   direction.split('+').includes('shift') ? 10 : 1,
-      negative: direction.split('+').includes('alt'),
+      current:  parseInt(getStyle(el, style), 10),
+      amount:   raw_px ? 10 : 1,
+      negative,
     }))
+    .map(payload =>
+      Object.assign(payload, {
+        token: raw_px ? null : stepStyleToken({
+          el:       payload.el,
+          prop:     style,
+          kind:     'space',
+          delta:    negative ? -1 : 1,
+          current:  payload.current,
+        })
+      }))
     .map(payload =>
       Object.assign(payload, {
         padding: payload.negative
           ? payload.current - payload.amount
           : payload.current + payload.amount
       }))
-    .forEach(({el, style, padding}) =>
-      el.style[style] = `${padding < 0 ? 0 : padding}px`)
+    .forEach(({el, token, padding}) =>
+      editStyle(el, style, token
+        ? token.css
+        : `${padding < 0 ? 0 : padding}px`, 'padding'))
 }
 
 export function padAllElementSides(els, keycommand) {

@@ -2,10 +2,67 @@ import $ from 'blingblingjs'
 import { TinyColor } from '@ctrl/tinycolor'
 import Color from 'colorjs.io'
 import { getStyle, contrast_color } from '../utilities/'
+import { editStyle, getPalette } from '../core'
 
 const state = {
   active_color: 'undefined',
   elements: [],
+  swatches: null,
+}
+
+// <input type=color> renders a datalist as swatches in its own picker, so the
+// page's palette shows up where you'd reach for it without VisBug growing a
+// second colour UI. Native pickers only show a handful, so we cap the list.
+const SWATCH_LIMIT = 40
+
+const swatchLabel = name =>
+  name
+    .replace(/^--/, '')
+    .replace(/^op-color-/, '')
+    .replace(/-/g, ' ')
+
+/**
+ * The page's colour tokens, keyed by the hex the picker will hand back.
+ *
+ * Tokens named `*-on-*` are the text-on-surface half of a pair — worth having,
+ * but they shouldn't crowd the surfaces themselves out of a capped list.
+ */
+const buildSwatches = () => {
+  const by_hex = new Map()
+
+  getPalette()
+    .slice()
+    .sort((a, b) =>
+      Number(a.name.includes('-on-')) - Number(b.name.includes('-on-')))
+    .forEach(token => {
+      const color = new TinyColor(token.value)
+      if (!color.isValid || color.getAlpha() === 0) return
+
+      const hex = `#${color.toHex()}`
+      if (!by_hex.has(hex)) by_hex.set(hex, token)
+    })
+
+  return new Map([...by_hex].slice(0, SWATCH_LIMIT))
+}
+
+const swatches = () => {
+  if (!state.swatches || !state.swatches.size)
+    state.swatches = buildSwatches()
+
+  return state.swatches
+}
+
+/** The token behind a picked colour, so we author `var(--…)` and not a hex. */
+const tokenFor = value => {
+  const color = new TinyColor(value)
+  return color.isValid
+    ? swatches().get(`#${color.toHex()}`)
+    : null
+}
+
+const colorValue = value => {
+  const token = tokenFor(value)
+  return token ? token.css : value
 }
 
 export function ColorPicker(pallete, selectorEngine) {
@@ -22,34 +79,53 @@ export function ColorPicker(pallete, selectorEngine) {
   }
 
   fgInput.on('input', ({target:{value}}) => {
+    const authored = colorValue(value)
+
     state.elements.map(el =>
-      el.style['color'] = value)
+      editStyle(el, 'color', authored, 'color'))
 
     foregroundPicker[0].style.setProperty(`--contextual_color`, value)
   })
 
   bgInput.on('input', ({target:{value}}) => {
+    const authored = colorValue(value)
+
     state.elements.map(el =>
-      el.style[el instanceof SVGElement
+      editStyle(el, el instanceof SVGElement
         ? 'fill'
         : 'backgroundColor'
-      ] = value)
+      , authored, 'background'))
 
     backgroundPicker[0].style.setProperty(`--contextual_color`, value)
   })
 
   boInput.on('input', ({target:{value}}) => {
+    const authored = colorValue(value)
+
     state.elements.map(el =>
-      el.style[el instanceof SVGElement
+      editStyle(el, el instanceof SVGElement
         ? 'stroke'
         : 'borderColor'
-      ] = value)
+      , authored, 'border color'))
 
     borderPicker[0].style.setProperty(`--contextual_color`, value)
   })
 
+  const paintSwatches = () => {
+    const list = $('#token_swatches', pallete)[0]
+    if (!list) return
+
+    const options = [...swatches()]
+      .map(([hex, {name}]) =>
+        `<option value="${hex}">${swatchLabel(name)}</option>`)
+      .join('')
+
+    if (list.innerHTML !== options) list.innerHTML = options
+  }
+
   const extractColors = elements => {
     state.elements = elements
+    paintSwatches()
 
     let isMeaningfulForeground  = false
     let isMeaningfulBackground  = false
